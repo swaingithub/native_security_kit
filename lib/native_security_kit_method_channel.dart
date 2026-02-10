@@ -60,4 +60,40 @@ class MethodChannelNativeSecurityKit extends NativeSecurityKitPlatform {
     }
     return decrypted;
   }
+
+  @override
+  Future<bool> isDebuggerAttached() async {
+    return await methodChannel.invokeMethod<bool>('isDebuggerAttached') ??
+        false;
+  }
+
+  @override
+  Future<String?> getInstallerSource() async {
+    return await methodChannel.invokeMethod<String?>('getInstallerSource');
+  }
+
+  @override
+  Future<void> toggleScreenSecurity(bool enabled) async {
+    await methodChannel.invokeMethod('toggleScreenSecurity', {'enabled': enabled});
+  }
+
+  @override
+  Future<bool> isUsbDebuggingEnabled() async {
+    return await methodChannel.invokeMethod<bool>('isUsbDebuggingEnabled') ?? false;
+  }
+
+  @override
+  Future<bool> isVpnActive() async {
+    return await methodChannel.invokeMethod<bool>('isVpnActive') ?? false;
+  }
+
+  @override
+  Future<bool> isExternalDisplayConnected() async {
+    return await methodChannel.invokeMethod<bool>('isExternalDisplayConnected') ?? false;
+  }
+
+  @override
+  Future<String?> getAppSignatureHash() async {
+    return await methodChannel.invokeMethod<String?>('getAppSignatureHash');
+  }
 }

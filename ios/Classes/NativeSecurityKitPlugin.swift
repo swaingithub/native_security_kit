@@ -2,15 +2,19 @@ import Flutter
 import UIKit
 import Security
 import Foundation
+import Network
 
 public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
     
     private let kKeyTag = "com.example.native_security_kit.key.v1"
+    private var screenSecurityEnabled = false
+    private var privacyOverlay: UIView?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "native_security_kit", binaryMessenger: registrar.messenger())
         let instance = NativeSecurityKitPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        registrar.addApplicationDelegate(instance)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -45,9 +49,71 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "INVALID_ARGUMENT", message: "Data is required", details: nil))
             }
+        case "isDebuggerAttached":
+            result(isDebuggerAttached())
+        case "getInstallerSource":
+            result(getInstallerSource())
+        case "toggleScreenSecurity":
+            if let args = call.arguments as? [String: Any],
+               let enabled = args["enabled"] as? Bool {
+                self.screenSecurityEnabled = enabled
+                result(nil)
+            } else {
+                result(FlutterError(code: "INVALID_ARGUMENT", message: "Enabled is required", details: nil))
+            }
+        case "isUsbDebuggingEnabled":
+            result(false) // Not applicable on iOS
+        case "isVpnActive":
+            result(isVPNConnected())
+        case "isExternalDisplayConnected":
+            result(UIScreen.screens.count > 1)
+        case "getAppSignatureHash":
+            result(getAppSignatureHash())
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+    
+    // MARK: - Privacy Overlay (Screen Security)
+    
+    public func applicationWillResignActive(_ application: UIApplication) {
+        if screenSecurityEnabled {
+            showPrivacyOverlay()
+        }
+    }
+    
+    public func applicationDidBecomeActive(_ application: UIApplication) {
+        hidePrivacyOverlay()
+    }
+    
+    private func showPrivacyOverlay() {
+        guard privacyOverlay == nil else { return }
+        
+        if let window = UIApplication.shared.keyWindow {
+            let overlay = UIView(frame: window.bounds)
+            overlay.backgroundColor = .black
+            
+            let label = UILabel()
+            label.text = "Privacy Protected"
+            label.textColor = .white
+            label.textAlignment = .center
+            label.font = UIFont.boldSystemFont(ofSize: 20)
+            label.translatesAutoresizingMaskIntoConstraints = false
+            
+            overlay.addSubview(label)
+            NSLayoutConstraint.activate([
+                label.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+                label.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+            ])
+            
+            window.addSubview(overlay)
+            self.privacyOverlay = overlay
+        }
+    }
+    
+    private func hidePrivacyOverlay() {
+        privacyOverlay?.removeFromSuperview()
+        privacyOverlay = nil
     }
     
     // MARK: - Jailbreak Detection
@@ -72,30 +138,19 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
             }
         }
         
-        // Try to write to a restricted path
         let stringToWrite = "Jailbreak Test"
         do {
             try stringToWrite.write(toFile: "/private/jailbreak.txt", atomically: true, encoding: .utf8)
-            // If writing succeeds, it's jailbroken
             try FileManager.default.removeItem(atPath: "/private/jailbreak.txt")
             return true
-        } catch {
-            // Expected to fail on non-jailbroken devices
-        }
+        } catch { }
         
-        if canOpen(urlScheme: "cydia://") {
+        if let url = URL(string: "cydia://"), UIApplication.shared.canOpenURL(url) {
             return true
         }
         
         return false
         #endif
-    }
-    
-    private func canOpen(urlScheme: String) -> Bool {
-        if let url = URL(string: urlScheme) {
-            return UIApplication.shared.canOpenURL(url)
-        }
-        return false
     }
     
     // MARK: - Simulator Detection
@@ -107,10 +162,64 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
         #endif
     }
     
+    // MARK: - Debugger Detection
+    private func isDebuggerAttached() -> Bool {
+        var info = kinfo_proc()
+        var mib : [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        var size = MemoryLayout<kinfo_proc>.stride
+        let res = sysctl(&mib, UInt32(mib.count), &info, &size, nil, 0)
+        if res != 0 {
+            return false
+        }
+        return (info.kp_proc.p_flag & P_TRACED) != 0
+    }
+    
+    // MARK: - Installer Source
+    private func getInstallerSource() -> String? {
+        if let receiptUrl = Bundle.main.appStoreReceiptURL {
+            let receiptName = receiptUrl.lastPathComponent
+            if receiptName == "sandboxReceipt" {
+                return "testflight"
+            } else if receiptName == "receipt" {
+                return "appstore"
+            }
+        }
+        return nil // Likely side-loaded or debug
+    }
+
+    private func isVPNConnected() -> Bool {
+        let scm = CFNetworkCopySystemProxySettings()?.takeRetainedValue() as? [String: Any]
+        if let keys = scm?["__SCOPED__"] as? [String: Any] {
+            for key in keys.keys {
+                if key.contains("tap") || key.contains("tun") || key.contains("ppp") || key.contains("ipsec") {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private func getAppSignatureHash() -> String? {
+        // iOS doesn't have a single signature hash like Android. 
+        // We return the Team ID as a proxy for signature identity.
+        if let query = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: "bundleSeedID",
+            kSecReturnAttributes as String: true
+        ] as CFDictionary? {
+            var result: CFTypeRef?
+            let status = SecItemCopyMatching(query, &result)
+            if status == errSecItemNotFound {
+                 // Common trick to get Team ID on first run
+                 return Bundle.main.bundleIdentifier
+            }
+        }
+        return Bundle.main.bundleIdentifier
+    }
+    
     // MARK: - Encryption / Decryption
     
     private func getSecureEnclaveKey() throws -> SecKey {
-        // Query for existing key
         let query: [String: Any] = [
             kSecClass as String: kSecClassKey,
             kSecAttrApplicationTag as String: kKeyTag.data(using: .utf8)!,
@@ -125,16 +234,11 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
             return (item as! SecKey)
         }
         
-        // Create new key if not found
-        // Note: kSecAttrTokenIDSecureEnclave is only available on actual devices with Secure Enclave.
-        // On simulator, we fall back to standard keychain or handle gracefully.
-        // For production grade, we should probably stick to creating a regular key if Secure Enclave is unavailable (e.g. old devices/simulators).
-        
         var accessControlError: Unmanaged<CFError>?
         guard let accessControl = SecAccessControlCreateWithFlags(
             kCFAllocatorDefault,
             kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-            .privateKeyUsage, // Require private key usage permission
+            .privateKeyUsage,
             &accessControlError
         ) else {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecParam), userInfo: nil)
@@ -150,7 +254,6 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
             ]
         ]
         
-        // Add Secure Enclave flag if available
         #if !targetEnvironment(simulator)
         attributes[kSecAttrTokenID as String] = kSecAttrTokenIDSecureEnclave
         #endif
@@ -165,7 +268,6 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
     
     private func encrypt(string: String) throws -> String {
         let privateKey = try getSecureEnclaveKey()
-        
         guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
             throw NSError(domain: "NativeSecurityKit", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get public key"])
         }
@@ -190,7 +292,6 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
     
     private func decrypt(string: String) throws -> String {
         let privateKey = try getSecureEnclaveKey()
-        
         guard let data = Data(base64Encoded: string) else {
              throw NSError(domain: "NativeSecurityKit", code: -4, userInfo: [NSLocalizedDescriptionKey: "Invalid base64 string"])
         }

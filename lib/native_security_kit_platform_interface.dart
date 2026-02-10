@@ -46,4 +46,32 @@ abstract class NativeSecurityKitPlatform extends PlatformInterface {
   Future<String> decrypt(String encrypted) {
     throw UnimplementedError('decrypt() has not been implemented.');
   }
+
+  Future<bool> isDebuggerAttached() {
+    throw UnimplementedError('isDebuggerAttached() has not been implemented.');
+  }
+
+  Future<String?> getInstallerSource() {
+    throw UnimplementedError('getInstallerSource() has not been implemented.');
+  }
+
+  Future<void> toggleScreenSecurity(bool enabled) {
+    throw UnimplementedError('toggleScreenSecurity() has not been implemented.');
+  }
+
+  Future<bool> isUsbDebuggingEnabled() {
+    throw UnimplementedError('isUsbDebuggingEnabled() has not been implemented.');
+  }
+
+  Future<bool> isVpnActive() {
+    throw UnimplementedError('isVpnActive() has not been implemented.');
+  }
+
+  Future<bool> isExternalDisplayConnected() {
+    throw UnimplementedError('isExternalDisplayConnected() has not been implemented.');
+  }
+
+  Future<String?> getAppSignatureHash() {
+    throw UnimplementedError('getAppSignatureHash() has not been implemented.');
+  }
 }

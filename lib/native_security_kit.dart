@@ -30,4 +30,42 @@ class NativeSecurityKit {
   static Future<String> decrypt(String encrypted) {
     return NativeSecurityKitPlatform.instance.decrypt(encrypted);
   }
+
+  /// Checks if a debugger is attached to the application.
+  static Future<bool> isDebuggerAttached() {
+    return NativeSecurityKitPlatform.instance.isDebuggerAttached();
+  }
+
+  /// Returns the installer source package name (Android) or receipt type (iOS).
+  /// Returns null if unknown or side-loaded.
+  static Future<String?> getInstallerSource() {
+    return NativeSecurityKitPlatform.instance.getInstallerSource();
+  }
+
+  /// Enables or disables screen security (prevents screenshots/recording).
+  /// Note: Works primarily on Android via FLAG_SECURE. iOS support is limited.
+  static Future<void> toggleScreenSecurity(bool enabled) {
+    return NativeSecurityKitPlatform.instance.toggleScreenSecurity(enabled);
+  }
+
+  /// Checks if USB Debugging (Android) is enabled.
+  static Future<bool> isUsbDebuggingEnabled() {
+    return NativeSecurityKitPlatform.instance.isUsbDebuggingEnabled();
+  }
+
+  /// Checks if a VPN or Proxy is currently active.
+  static Future<bool> isVpnActive() {
+    return NativeSecurityKitPlatform.instance.isVpnActive();
+  }
+
+  /// Checks if an external display (HDMI, AirPlay, etc.) is connected.
+  static Future<bool> isExternalDisplayConnected() {
+    return NativeSecurityKitPlatform.instance.isExternalDisplayConnected();
+  }
+
+  /// Returns the SHA-256 hash of the application signing certificate.
+  /// Used to verify that the app has not been re-signed.
+  static Future<String?> getAppSignatureHash() {
+    return NativeSecurityKitPlatform.instance.getAppSignatureHash();
+  }
 }

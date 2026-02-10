@@ -26,6 +26,27 @@ class MockNativeSecurityKitPlatform
   @override
   Future<String> decrypt(String encrypted) =>
       Future.value(encrypted.replaceFirst('encrypted_', ''));
+
+  @override
+  Future<bool> isDebuggerAttached() => Future.value(false);
+
+  @override
+  Future<String?> getInstallerSource() => Future.value('com.android.vending');
+
+  @override
+  Future<void> toggleScreenSecurity(bool enabled) => Future.value();
+
+  @override
+  Future<bool> isUsbDebuggingEnabled() => Future.value(false);
+
+  @override
+  Future<bool> isVpnActive() => Future.value(false);
+
+  @override
+  Future<bool> isExternalDisplayConnected() => Future.value(false);
+
+  @override
+  Future<String?> getAppSignatureHash() => Future.value('mock_hash');
 }
 
 void main() {
