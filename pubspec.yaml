@@ -1,7 +1,8 @@
 name: native_security_kit
-description: "A new Flutter plugin project."
-version: 0.0.1
-homepage:
+description: "A comprehensive enterprise-grade security suite for Flutter. Includes root/jailbreak detection, emulator checks, hardware-backed encryption (AES-GCM & Secure Enclave), debugger detection, anti-tamper signature verification, and screen privacy protection."
+version: 1.0.0
+homepage: https://github.com/your-username/native_security_kit
+repository: https://github.com/your-username/native_security_kit
 
 environment:
   sdk: ^3.10.1
