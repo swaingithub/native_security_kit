@@ -125,15 +125,41 @@ class NativeSecurityKitPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     // --- Emulator Detection ---
+    // --- Emulator Detection ---
+    // --- Emulator Detection ---
     private fun isEmulator(): Boolean {
-        return (Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for x86")
-                || Build.MANUFACTURER.contains("Genymotion")
-                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-                || "google_sdk" == Build.PRODUCT)
+        // 1. Check System Properties (Most reliable for official emulators)
+        try {
+            val systemProperties = Class.forName("android.os.SystemProperties")
+            val get = systemProperties.getMethod("get", String::class.java)
+            val qemu = get.invoke(systemProperties, "ro.kernel.qemu") as String
+            if (qemu == "1") return true
+            
+            val qemu2 = get.invoke(systemProperties, "ro.boot.qemu") as String
+            if (qemu2 == "1") return true
+
+            val hardware = get.invoke(systemProperties, "ro.hardware") as String
+            if (hardware.contains("goldfish") || hardware.contains("ranchu")) return true
+        } catch (e: Exception) {
+            // Ignore reflection errors
+        }
+
+        // 2. Check Build fields (Aggregated check for comprehensive coverage)
+        val buildInfo = (Build.FINGERPRINT + Build.DEVICE + Build.MODEL + 
+                         Build.BRAND + Build.PRODUCT + Build.MANUFACTURER + 
+                         Build.HARDWARE + Build.BOARD + Build.BOOTLOADER).lowercase()
+        
+        return (buildInfo.contains("generic")
+                || buildInfo.contains("unknown")
+                || buildInfo.contains("emulator")
+                || buildInfo.contains("sdk") // Common in emulator products like sdk_gphone...
+                || buildInfo.contains("google_sdk")
+                || buildInfo.contains("genymotion")
+                || buildInfo.contains("goldfish")
+                || buildInfo.contains("ranchu")
+                || buildInfo.contains("vbox")
+                || buildInfo.contains("android_x86") // Specific to x86 emulators
+                )
     }
 
     // --- Encryption / Decryption ---
