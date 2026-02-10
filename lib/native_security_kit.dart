@@ -58,6 +58,11 @@ class NativeSecurityKit {
     return NativeSecurityKitPlatform.instance.isVpnActive();
   }
 
+  /// Checks if a system-level HTTP proxy is configured.
+  static Future<bool> isProxyDetected() {
+    return NativeSecurityKitPlatform.instance.isProxyDetected();
+  }
+
   /// Checks if an external display (HDMI, AirPlay, etc.) is connected.
   static Future<bool> isExternalDisplayConnected() {
     return NativeSecurityKitPlatform.instance.isExternalDisplayConnected();

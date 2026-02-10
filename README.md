@@ -1,78 +1,224 @@
-# Native Security Suite 🛡️
+# Native Security Suite
 
-An enterprise-grade security toolkit for Flutter applications. Protect your app from reverse engineering, tampering, and untrusted environments using 100% native security APIs.
+**Enterprise-Grade Native Security Toolkit for Flutter**
 
-## Features
+A production-ready Flutter plugin providing **deep native security controls** using platform-level APIs. Protect your application from **reverse engineering, tampering, runtime attacks, rooted or jailbroken devices, and untrusted execution environments** using **hardware-backed security mechanisms**.
 
-### 🛡️ Device Integrity
-* **Root/Jailbreak Detection**: Detects compromised environments using multiple heuristics.
-* **Emulator/Simulator Check**: Prevents running in sandboxed or virtualized environments.
+Designed for **fintech, healthcare, enterprise, government, and high-risk mobile applications**.
 
-### 🔐 Hardware-Backed Encryption
-* **Android**: AES-GCM encryption using **Android Keystore**. Keys never leave the TEE (Trusted Execution Environment).
-* **iOS**: Hybrid ECIES encryption (NIST P-256) using **Secure Enclave**. Hardware-level protection for sensitive data.
+---
 
-### 🕵️ Runtime & Tamper Protection
-* **Debugger Detection**: Detects attached LLDB (iOS) or ADB/JDWP (Android) debuggers.
-* **Integrity Check**: Retrieve the app's signing certificate hash (SHA-256) to verify authenticity.
-* **USB Debugging**: Detects if ADB is enabled (high-risk).
+## Overview
 
-### 📺 Privacy & Anti-Leakage
-* **Screenshot Prevention (Android)**: Blocks system-level screenshots and recordings via `FLAG_SECURE`.
-* **Privacy Overlay (iOS)**: Automatically covers app content in the App Switcher and background.
-* **External Display**: Detects HDMI/AirPlay mirroring to prevent data leakage.
+Flutter applications are sandboxed and do not expose many low-level operating system security features. This plugin bridges that gap by exposing **native Android and iOS security APIs** through a clean, consistent, and easy-to-use Dart interface.
 
-### 🌐 Network Security
-* **VPN/Proxy Detection**: Identifies if the user is masking their network identity.
+It enables:
+
+* Hardware-backed encryption
+* Runtime integrity verification
+* Device trust evaluation
+* Secure screen protection
+* Network environment analysis
+
+All with minimal Flutter-side integration.
+
+---
+
+## Key Features
+
+### Device Integrity & Environment Validation
+
+* Root detection (Android)
+* Jailbreak detection (iOS)
+* Emulator and simulator detection
+* Hooking and instrumentation detection (basic heuristics)
+* Debugger attachment detection
+
+---
+
+### Hardware-Backed Encryption
+
+* **Android**: AES-GCM encryption via **Android Keystore (TEE-backed)**
+* **iOS**: Secure Enclave encryption using **ECIES (NIST P-256)**
+
+All cryptographic keys are generated and stored inside secure hardware and never leave the protected boundary.
+
+---
+
+### Runtime & Tamper Protection
+
+* Debugger detection (ADB / JDWP / LLDB)
+* Application signature verification (SHA-256)
+* USB debugging detection
+* Runtime instrumentation detection
+
+---
+
+### Privacy & Data Leakage Prevention
+
+* Screenshot and screen recording prevention (Android)
+* Secure overlay protection in app switcher (iOS)
+* External display and screen mirroring detection (HDMI / AirPlay)
+
+---
+
+### Network Security
+
+* VPN detection
+* Proxy detection (mapped to VPN/Environment checks)
+* Suspicious network routing environment identification
+
+---
+
+## Platform Support
+
+| Platform | Minimum Version |
+| -------- | --------------- |
+| Android  | API 23+ (6.0)   |
+| iOS      | 12.0+           |
 
 ---
 
 ## Installation
 
-Add path to your `pubspec.yaml`:
+Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
   native_security_kit: ^1.0.0
 ```
 
-## Usage
+Then run:
 
-### Device Security
-```dart
-bool isRooted = await NativeSecurityKit.isDeviceRooted();
-bool isEmulator = await NativeSecurityKit.isRunningOnEmulator();
-bool isDebugger = await NativeSecurityKit.isDebuggerAttached();
+```bash
+flutter pub get
 ```
-
-### Encryption
-```dart
-// Encrypt data using hardware-backed keys
-String encrypted = await NativeSecurityKit.encrypt("secret message");
-
-// Decrypt data
-String decrypted = await NativeSecurityKit.decrypt(encrypted);
-```
-
-### Privacy Mode
-```dart
-// Block screenshots and screen recordings
-await NativeSecurityKit.toggleScreenSecurity(true);
-```
-
-### Integrity Verification
-```dart
-String? hash = await NativeSecurityKit.getAppSignatureHash();
-if (hash != "YOUR_RELEASE_HASH") {
-  // Take action (crash, lockout, report)
-}
-```
-
-## Platform Support
-* **Android**: API Level 23+ (Marshmallow)
-* **iOS**: ios 12.0+
 
 ---
 
-## Security Note
-While this plugin provides robust layered security, no single check is 100% foolproof. For maximum protection, use these checks in combination with server-side attestation (SafetyNet/Play Integrity/DeviceCheck).
+## Usage
+
+### Import
+
+```dart
+import 'package:native_security_kit/native_security_kit.dart';
+```
+
+---
+
+### Device Integrity Checks
+
+```dart
+bool isRooted = await NativeSecurityKit.isDeviceRooted();
+bool isJailbroken = await NativeSecurityKit.isDeviceJailbroken();
+bool isEmulator = await NativeSecurityKit.isRunningOnEmulator();
+bool isDebuggerAttached = await NativeSecurityKit.isDebuggerAttached();
+```
+
+---
+
+### Hardware-Backed Encryption
+
+```dart
+String encrypted = await NativeSecurityKit.encrypt("Highly Confidential Data");
+String decrypted = await NativeSecurityKit.decrypt(encrypted);
+```
+
+---
+
+### Screen Protection
+
+```dart
+await NativeSecurityKit.toggleScreenSecurity(true);
+```
+
+Prevents screenshots and screen recording at the operating system level.
+
+---
+
+### Application Integrity Verification
+
+```dart
+String? signatureHash = await NativeSecurityKit.getAppSignatureHash();
+
+if (signatureHash != "YOUR_RELEASE_SIGNATURE_HASH") {
+  // Lock application, terminate session, or trigger alert
+}
+```
+
+---
+
+### Network Risk Detection
+
+```dart
+bool vpnActive = await NativeSecurityKit.isVpnActive();
+bool proxyDetected = await NativeSecurityKit.isProxyDetected();
+```
+
+---
+
+## Architecture Overview
+
+```
+Flutter Application
+        ↓
+NativeSecurityKit (Dart API)
+        ↓
+Platform Interface
+        ↓
+Method Channels
+        ↓
+Android (Kotlin)   → Keystore, System APIs
+iOS (Swift)        → Secure Enclave, System APIs
+```
+
+This architecture ensures:
+
+* Clean separation of concerns
+* Maximum native performance
+* Strong security boundaries
+* Platform-specific implementation isolation
+
+---
+
+## Recommended Use Cases
+
+* Banking and fintech applications
+* Healthcare systems
+* Enterprise internal tools
+* Government applications
+* Crypto wallets
+* DRM-protected media apps
+* Secure authentication platforms
+
+---
+
+## Security Disclaimer
+
+No client-side protection is fully foolproof.
+
+For production-grade security, always combine device-level protections with:
+
+* Server-side validation
+* Play Integrity API / SafetyNet (Android)
+* Apple DeviceCheck / App Attest (iOS)
+* Backend-based risk scoring and monitoring
+
+Layered security architecture is strongly recommended.
+
+---
+
+## Roadmap
+
+* Google Play Integrity API integration
+* Apple App Attest integration
+* Advanced runtime hooking detection
+* Anti-repackaging verification
+* Secure memory APIs
+
+---
+
+## License
+
+MIT License © 2026
+Designed for secure Flutter application development.

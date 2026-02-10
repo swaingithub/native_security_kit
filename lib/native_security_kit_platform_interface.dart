@@ -67,6 +67,10 @@ abstract class NativeSecurityKitPlatform extends PlatformInterface {
     throw UnimplementedError('isVpnActive() has not been implemented.');
   }
 
+  Future<bool> isProxyDetected() {
+    throw UnimplementedError('isProxyDetected() has not been implemented.');
+  }
+
   Future<bool> isExternalDisplayConnected() {
     throw UnimplementedError('isExternalDisplayConnected() has not been implemented.');
   }

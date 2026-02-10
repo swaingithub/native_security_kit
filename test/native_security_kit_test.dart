@@ -43,6 +43,9 @@ class MockNativeSecurityKitPlatform
   Future<bool> isVpnActive() => Future.value(false);
 
   @override
+  Future<bool> isProxyDetected() => Future.value(false);
+
+  @override
   Future<bool> isExternalDisplayConnected() => Future.value(false);
 
   @override

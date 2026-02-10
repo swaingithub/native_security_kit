@@ -88,6 +88,11 @@ class MethodChannelNativeSecurityKit extends NativeSecurityKitPlatform {
   }
 
   @override
+  Future<bool> isProxyDetected() async {
+    return await methodChannel.invokeMethod<bool>('isProxyDetected') ?? false;
+  }
+
+  @override
   Future<bool> isExternalDisplayConnected() async {
     return await methodChannel.invokeMethod<bool>('isExternalDisplayConnected') ?? false;
   }

@@ -62,9 +62,11 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "INVALID_ARGUMENT", message: "Enabled is required", details: nil))
             }
         case "isUsbDebuggingEnabled":
-            result(false) // Not applicable on iOS
+            result(false)
         case "isVpnActive":
             result(isVPNConnected())
+        case "isProxyDetected":
+            result(isProxyDetected())
         case "isExternalDisplayConnected":
             result(UIScreen.screens.count > 1)
         case "getAppSignatureHash":
@@ -184,7 +186,7 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
                 return "appstore"
             }
         }
-        return nil // Likely side-loaded or debug
+        return nil
     }
 
     private func isVPNConnected() -> Bool {
@@ -199,21 +201,15 @@ public class NativeSecurityKitPlugin: NSObject, FlutterPlugin {
         return false
     }
 
-    private func getAppSignatureHash() -> String? {
-        // iOS doesn't have a single signature hash like Android. 
-        // We return the Team ID as a proxy for signature identity.
-        if let query = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: "bundleSeedID",
-            kSecReturnAttributes as String: true
-        ] as CFDictionary? {
-            var result: CFTypeRef?
-            let status = SecItemCopyMatching(query, &result)
-            if status == errSecItemNotFound {
-                 // Common trick to get Team ID on first run
-                 return Bundle.main.bundleIdentifier
-            }
+    private func isProxyDetected() -> Bool {
+        guard let proxySettings = CFNetworkCopySystemProxySettings()?.takeRetainedValue() as? [String: Any],
+              let proxies = proxySettings[kCFNetworkProxiesHTTPEnable as String] as? Int else {
+            return false
         }
+        return proxies > 0
+    }
+
+    private func getAppSignatureHash() -> String? {
         return Bundle.main.bundleIdentifier
     }
     

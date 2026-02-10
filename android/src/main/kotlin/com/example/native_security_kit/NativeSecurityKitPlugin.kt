@@ -124,6 +124,9 @@ class NativeSecurityKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
             "isVpnActive" -> {
                 result.success(isVpnActive())
             }
+            "isProxyDetected" -> {
+                result.success(isProxyDetected())
+            }
             "isExternalDisplayConnected" -> {
                 result.success(isExternalDisplayConnected())
             }
@@ -185,6 +188,15 @@ class NativeSecurityKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
                 }
             }
             return false
+        }
+    }
+
+    private fun isProxyDetected(): Boolean {
+        return try {
+            val proxyAddress = System.getProperty("http.proxyHost")
+            proxyAddress != null && proxyAddress.isNotEmpty()
+        } catch (e: Exception) {
+            false
         }
     }
 
